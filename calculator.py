@@ -1,180 +1,141 @@
-# Simple Calculator 
-# This program is a simple calculator made using Tkinter library. 
-# Error Library => [Error 101 : Empty or null value or NaN.] [Error 102 : Problem with operator.]
-
 import tkinter as tk
 
-# Setup window
-root = tk.Tk()
-root.title("Calculator")
-root.resizable(False, False)
+button_values = [
+    ["AC", "+/-", "%", "÷"], 
+    ["7", "8", "9", "×"], 
+    ["4", "5", "6", "-"],
+    ["1", "2", "3", "+"],
+    [".", "0", "x²", "="]
+]
 
-# Global variables
-val1=None;
-val2=None;
-operator=None;
-isDecimal=False;
+right_symbols = {"/" : "÷", "*" : "×", "-" : "-", "+" : "+", "=" : "="}
+top_symbols = ["AC", "+/-", "%"]
+special_symbols = ["AC", "+/-", "="]
 
-# number function to input multi digit number
-def number(n):
-    val = TXT.get("1.0", tk.END).strip()
-    if isDecimal:
-        new_val= val+str(n)
-    else:
-        if not val:
-            new_val = str(n)
+
+LARGE_FONT_STYLE = ("Arial", 30, "bold")
+SMALL_FONT_STYLE = ("Arial", 16)
+DIGITS_FONT_STYLE = ("Arial", 24, "bold")
+DEFAULT_FONT_STYLE = ("Arial", 20)
+
+color_light_gray = "#D4D4D2"
+color_black = "#1C1C1C"
+color_dark_gray = "#505050"
+color_orange = "#FF9500"
+color_white = "white"
+
+window = tk.Tk()
+window.title("Calculator")
+window.resizable(False, False)
+
+frame = tk.Frame(window)
+
+e_label = tk.Label(frame, text="", anchor=tk.E, bg=color_black, fg=color_white, padx=20, font=SMALL_FONT_STYLE , width = 10)
+e_label.grid(row=0, column=0, columnspan=4, sticky="nsew")
+
+label = tk.Label(frame, text="", anchor=tk.E, bg=color_black, fg=color_white, padx=20, font=LARGE_FONT_STYLE, width = 10)
+label.grid(row=1, column=0, columnspan=4, sticky="nsew")
+
+for row in range(5):
+    for col in range(4):
+        val = button_values[row][col]
+        button = tk.Button(frame, text=val , font=("Arial", 30),   width=3, height=1, command=lambda v=val: add_to_exp(v))
+        button.grid(row = row + 2, column = col)
+        if val in top_symbols:
+            button.config(background=color_light_gray)
+        elif val in right_symbols.values():
+            button.config(foreground=color_white, background=color_orange)
+        else: 
+            button.config(foreground=color_white, background=color_dark_gray)
+frame.pack()
+
+current = ""
+expression = ""
+isDeci = False
+
+def add_to_exp(val):
+    global current, expression, isDeci
+
+    if val not in special_symbols:
+        if (val in right_symbols.values() or val in top_symbols):
+            append_operator(val)
+
         else:
-            try:
-                new_val = str(int(val) * 10 + n)
-            except ValueError:
-                new_val = str(n)  # fallback if val isn't a number
-    TXT.delete("1.0", tk.END)
-    TXT.insert(tk.END, new_val)
+            if isDeci and val == ".":
+                return
+            if val == ".":
+                isDeci = True
+            if val == "x²":
+                current = current[-1]
+                val = "**2"
 
-# decimal function to include point value calculations
-def decimal():
-    global isDecimal;
-    isDecimal=True
-    val = TXT.get("1.0", tk.END).strip()
-    if not val:
-        return
+            current += str(val)
+            print(current)
+        update_label()
     else:
-        try:
-            new_val = val+'.'
-        except ValueError:
-            new_val = val+'.0' # fallback if val isn't a number
-    TXT.delete("1.0", tk.END)
-    TXT.insert(tk.END, new_val)    
+        match val:
+            case "=":
+                calculate()
+            case "AC":
+                all_clear()
+            case "+/-":
+                negate()
+            case _:
+                return
 
-# on_operator_click function to store first value and operation type.
-def on_operator_click(op):
-    global val1, operator, isDecimal
-    operator = op
-    operator_buttons = {
-    "add": add_btn,
-    "sub": sub_btn,
-    "multi": multi_btn,
-    "div": div_btn
-}
-    try:
-        val1 = float(TXT.get("1.0", tk.END))
-        TXT.delete('1.0', tk.END)
-        isDecimal=False
-        operator_buttons[op].config(bg="yellow")
-    except Exception:
-        TXT.insert(tk.END,"Error 101!")
+def sqrt():
+        global current
+        current = str(eval(f"{current}**0.5"))
+        update_label()         
+
+def append_operator(operator):
+    global current, expression, isDeci
+    if operator == "÷":
+        operator = "/"
+    elif operator == "×":
+        operator = "*"
+    elif operator == "%":
+        operator = "/100"
+
+    if current:
+        current += operator
+        expression += current # Append number + operator        
+    elif not current:
+        if expression:
+            expression = expression[:-1]  # Replace last operator
+            expression += operator
+    current = ""
+    isDeci = False
+    update_e_label()
+    update_label()
+
+def calculate():
+    global expression, current
+    expression += current
+    update_e_label()
+    current = str(eval(expression))
+    expression = ""
+    update_label()
+
+def all_clear():
+    global expression, current
+    expression = ""
+    current = ""
+    update_e_label()
+    update_label()
+
+def negate():
+    global expression, current
+    current = "(" + str(eval(str(current) + "* -1")) + ")"
+    update_label()
 
     
+def update_label():
+    global current
+    label.config(text=current)
 
-# answer function to store second value.
-def answer():
-    global val2, isDecimal
-    try:
-        val2 = float(TXT.get("1.0", tk.END))
-        TXT.delete('1.0', tk.END)
-        isDecimal=False
-        calculate()
-    except Exception:
-        TXT.insert(tk.END,"Error 101!")
+def update_e_label():
+    global expression
+    e_label.config(text=expression)
 
-# calculate function to calculate according to the operation type and displays the answer. Resets the button highlight after calculation.
-def calculate():
-    match operator:
-        case 'add':
-            TXT.insert(tk.END,val1+val2)
-            add_btn.config(bg="SystemButtonFace")
-        case 'sub':
-            TXT.insert(tk.END,val1-val2)
-            sub_btn.config(bg="SystemButtonFace")
-        case 'multi':
-            TXT.insert(tk.END,val1*val2)
-            multi_btn.config(bg="SystemButtonFace")
-        case 'div':
-            TXT.insert(tk.END,val1/val2)
-            div_btn.config(bg="SystemButtonFace")
-        case _:
-            TXT.insert(tk.END,"Error 102!")
-
-# clear function deletes the last entered digit.
-def clear():
-    val = TXT.get("1.0", tk.END).strip()
-    new_val= val[:-1]    
-    TXT.delete('1.0', tk.END)
-    TXT.insert(tk.END,new_val)
-
-# all_clear function deletes everything and starts fresh.
-def all_clear(): 
-    global val1, val2, operator
-    val1=None;
-    val2=None;
-    operator=None;
-    TXT.delete('1.0', tk.END)
-
-
-# Creating Text field and buttons of calculator.
-TXT = tk.Text(root,height="3", width= "30", font=("Arial", 16))
-
-clear_btn = tk.Button(root, text="C", width=3, command=clear)
-all_clear_btn = tk.Button(root, text="AC", width=3, command=all_clear)
-
-add_btn = tk.Button(root, text='+', width=3, command=lambda: on_operator_click('add'))
-sub_btn = tk.Button(root, text='–', width=3, command=lambda: on_operator_click('sub'))
-multi_btn = tk.Button(root, text='x', width=3, command=lambda: on_operator_click('multi'))
-div_btn = tk.Button(root, text='÷', width=3, command=lambda: on_operator_click('div'))
-
-one_btn = tk.Button(root, text='1', width=5, command=lambda: number(1))
-two_btn = tk.Button(root, text='2', width=5, command=lambda: number(2))
-three_btn = tk.Button(root, text='3', width=5, command=lambda: number(3))
-four_btn = tk.Button(root, text='4', width=5, command=lambda: number(4))
-five_btn = tk.Button(root, text='5', width=5, command=lambda: number(5))
-six_btn = tk.Button(root, text='6', width=5, command=lambda: number(6))
-seven_btn = tk.Button(root, text='7', width=5, command=lambda: number(7))
-eight_btn = tk.Button(root, text='8', width=5, command=lambda: number(8))
-nine_btn = tk.Button(root, text='9', width=5, command=lambda: number(9))
-zero_btn = tk.Button(root, text='0', width=5, command=lambda: number(0))
-
-ans_btn = tk.Button(root, text='=', width=5, command=answer)
-decimal_btn = tk.Button(root, text='.', width=5, command=decimal)
-
-# bind_keys function to bind keyboard numbers to the buttons on screen.
-def bind_keys():
-    for i in range(10):
-        root.bind(str(i), lambda event, n=i: number(n))
-    root.bind('+', lambda event, op = 'add' : on_operator_click(op))
-    root.bind('-', lambda event, op = 'sub' : on_operator_click(op))
-    root.bind('*', lambda event, op = 'multi' : on_operator_click(op))
-    root.bind('/', lambda event, op = 'div' : on_operator_click(op))
-    root.bind('<Return>', lambda event : answer())
-bind_keys()
-
-# style for buttons.
-btn_opts = {'padx': 4, 'pady': 5, 'sticky': 'nsew'}
-
-# adding buttons and text field to the window.
-add_btn.grid(row=3, column=4, **btn_opts)
-sub_btn.grid(row=4, column=4, **btn_opts)
-multi_btn.grid(row=5, column=4, **btn_opts)
-div_btn.grid(row=6, column=4, **btn_opts)
-
-one_btn.grid(row=5, column=1, **btn_opts)
-two_btn.grid(row=5, column=2, **btn_opts)
-three_btn.grid(row=5, column=3, **btn_opts) 
-
-four_btn.grid(row=4, column=1, **btn_opts)
-five_btn.grid(row=4, column=2, **btn_opts)
-six_btn.grid(row=4, column=3, **btn_opts) 
-
-seven_btn.grid(row=3, column=1, **btn_opts)
-eight_btn.grid(row=3, column=2, **btn_opts)
-nine_btn.grid(row=3, column=3, **btn_opts)
-
-zero_btn.grid(row=6, column=2, **btn_opts)
-ans_btn.grid(row=6, column=3, **btn_opts)
-decimal_btn.grid(row=6, column=1, **btn_opts)
-
-TXT.grid(row=1, column=1, rowspan=2, columnspan=3, padx=10, pady=20)
-all_clear_btn.grid(row=1, column=4, padx=(5, 10), pady=(15, 5))
-clear_btn.grid(row=2, column=4, padx=(5, 10), pady=(5,15))
-
-# loops the window to show changes.
-root.mainloop()
+window.mainloop()
