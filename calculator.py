@@ -1,3 +1,5 @@
+# Calculator
+
 import tkinter as tk
 
 button_values = [
@@ -37,14 +39,19 @@ label = tk.Label(frame, text="", anchor=tk.E, bg=color_black, fg=color_white, pa
 label.grid(row=1, column=0, columnspan=4, sticky="nsew")
 
 for row in range(5):
+
     for col in range(4):
+
         val = button_values[row][col]
         button = tk.Button(frame, text=val , font=("Arial", 30),   width=3, height=1, command=lambda v=val: add_to_exp(v))
         button.grid(row = row + 2, column = col)
+
         if val in top_symbols:
             button.config(background=color_light_gray)
+
         elif val in right_symbols.values():
             button.config(foreground=color_white, background=color_orange)
+
         else: 
             button.config(foreground=color_white, background=color_dark_gray)
 frame.pack()
@@ -57,6 +64,7 @@ def add_to_exp(val):
     global current, expression, isDeci
 
     if val not in special_symbols:
+
         if (val in right_symbols.values() or val in top_symbols):
             append_operator(val)
 
@@ -66,56 +74,72 @@ def add_to_exp(val):
             if val == ".":
                 isDeci = True
             if val == "x²":
-                current = current[-1]
-                val = "**2"
-
+                try:
+                    sqr(val)
+                    return
+                except Exception:
+                    return
             current += str(val)
             print(current)
         update_label()
     else:
+
         match val:
             case "=":
                 calculate()
+
             case "AC":
                 all_clear()
+
             case "+/-":
                 negate()
+
             case _:
                 return
 
-def sqrt():
-        global current
-        current = str(eval(f"{current}**0.5"))
-        update_label()         
 
 def append_operator(operator):
     global current, expression, isDeci
+
     if operator == "÷":
         operator = "/"
     elif operator == "×":
         operator = "*"
     elif operator == "%":
-        operator = "/100"
+        percent()
+        return
 
-    if current:
+    if current:   
+
         current += operator
-        expression += current # Append number + operator        
+        expression += current # Append number + operator
+
     elif not current:
+
+        if operator == "%":
+            return
+        
         if expression:
             expression = expression[:-1]  # Replace last operator
             expression += operator
+        elif not expression:
+            return
+        
     current = ""
     isDeci = False
     update_e_label()
     update_label()
 
 def calculate():
-    global expression, current
-    expression += current
-    update_e_label()
-    current = str(eval(expression))
-    expression = ""
-    update_label()
+    try: 
+        global expression, current
+        expression += current
+        update_e_label()
+        current = str(eval(expression))
+        expression = ""
+        update_label()
+    except:
+        return
 
 def all_clear():
     global expression, current
@@ -126,9 +150,28 @@ def all_clear():
 
 def negate():
     global expression, current
-    current = "(" + str(eval(str(current) + "* -1")) + ")"
-    update_label()
+    if current:
+        current = "(" + str(eval(str(current) + "* -1")) + ")"
+        update_label()
+    else:
+        return
 
+def percent():
+    global current
+    if current:
+        current = str(eval("(" + str(current) + "/100)"))
+        update_label()
+    else:
+        return
+
+def sqr(val):
+    global current
+    val = "**2"
+    if current:
+        current = "(" + current + val + ")"
+        update_label()
+    else:
+        return
     
 def update_label():
     global current
