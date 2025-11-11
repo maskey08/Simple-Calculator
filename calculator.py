@@ -56,6 +56,21 @@ for row in range(5):
             button.config(foreground=color_white, background=color_dark_gray)
 frame.pack()
 
+# Bind Keys
+for i in range(10):
+    window.bind(str(i), lambda event, n=i: add_to_exp(str(n)))
+
+window.bind('+', lambda event : add_to_exp('+'))
+window.bind('-', lambda event : add_to_exp("-"))
+window.bind('*', lambda event : add_to_exp("×"))
+window.bind('/', lambda event : add_to_exp("÷"))
+window.bind('.', lambda event : add_to_exp("."))
+window.bind('%', lambda event : add_to_exp("%"))
+window.bind('<Return>', lambda event : add_to_exp("="))
+window.bind('<Escape>', lambda event : add_to_exp("AC"))
+window.bind('<BackSpace>', lambda event : clear())
+
+
 current = ""
 expression = ""
 isDeci = False
@@ -64,8 +79,9 @@ def add_to_exp(val):
     global current, expression, isDeci
 
     if val not in special_symbols:
-
         if (val in right_symbols.values() or val in top_symbols):
+            if current[-1] == ".":
+                current += "0"
             append_operator(val)
 
         else:
@@ -95,6 +111,7 @@ def add_to_exp(val):
                 negate()
 
             case _:
+                print("Value not Recognized: " + str(val))
                 return
 
 
@@ -110,19 +127,15 @@ def append_operator(operator):
         return
 
     if current:   
-
         current += operator
         expression += current # Append number + operator
 
-    elif not current:
-
-        if operator == "%":
-            return
-        
+    elif not current:     
         if expression:
             expression = expression[:-1]  # Replace last operator
             expression += operator
         elif not expression:
+            print("[Expression = Null] :: No Value Detected.")
             return
         
     current = ""
@@ -138,30 +151,51 @@ def calculate():
         current = str(eval(expression))
         expression = ""
         update_label()
-    except:
+    except Exception as e:
+        print("Exception found: " , e)
         return
+
+def clear():
+    global expression, current
+    if current:
+        current = current[:-1]
+        update_label()
+    else:
+        print("[Value = Null] :: Nothing to clear.")
+        return
+
 
 def all_clear():
     global expression, current
     expression = ""
     current = ""
+    isDeci = False
     update_e_label()
     update_label()
 
 def negate():
     global expression, current
     if current:
-        current = "(" + str(eval(str(current) + "* -1")) + ")"
-        update_label()
+        try:
+            current = "(" + str(eval(str(current) + "* -1")) + ")"
+            update_label()
+        except Exception as e:
+            print("SYS Error: Negation not working..")
+            print("Exception found: " , e)
     else:
         return
 
 def percent():
     global current
     if current:
-        current = str(eval("(" + str(current) + "/100)"))
-        update_label()
+        try:
+            current = str(eval("(" + str(current) + "/100)"))
+            update_label()
+        except Exception as e:
+            print("SYS Error: Percent not working..")
+            print("Exception found: " , e)
     else:
+        print("No Value Detected.")
         return
 
 def sqr(val):
@@ -171,6 +205,7 @@ def sqr(val):
         current = "(" + current + val + ")"
         update_label()
     else:
+        print("No Value Detected.")
         return
     
 def update_label():
