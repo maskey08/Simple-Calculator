@@ -1,4 +1,4 @@
-# Calculator
+# Calculator - v2.3
 
 import tkinter as tk
 
@@ -17,8 +17,6 @@ special_symbols = ["AC", "+/-", "="]
 
 LARGE_FONT_STYLE = ("Arial", 30, "bold")
 SMALL_FONT_STYLE = ("Arial", 16)
-DIGITS_FONT_STYLE = ("Arial", 24, "bold")
-DEFAULT_FONT_STYLE = ("Arial", 20)
 
 color_light_gray = "#D4D4D2"
 color_black = "#1C1C1C"
@@ -32,10 +30,10 @@ window.resizable(False, False)
 
 frame = tk.Frame(window)
 
-e_label = tk.Label(frame, text="", anchor=tk.E, bg=color_black, fg=color_white, padx=20, font=SMALL_FONT_STYLE , width = 10)
+e_label = tk.Label(frame, text="", anchor=tk.E, justify="right", bg=color_black, fg=color_white, padx=10, font=SMALL_FONT_STYLE , width = 10, wraplength=300)
 e_label.grid(row=0, column=0, columnspan=4, sticky="nsew")
 
-label = tk.Label(frame, text="", anchor=tk.E, bg=color_black, fg=color_white, padx=20, font=LARGE_FONT_STYLE, width = 10)
+label = tk.Label(frame, text="", anchor=tk.E, justify="right", bg=color_black, fg=color_white, padx=10, font=LARGE_FONT_STYLE, width = 10, wraplength=300)
 label.grid(row=1, column=0, columnspan=4, sticky="nsew")
 
 for row in range(5):
@@ -71,6 +69,7 @@ window.bind('<Escape>', lambda event : add_to_exp("AC"))
 window.bind('<BackSpace>', lambda event : clear())
 
 
+
 current = ""
 expression = ""
 isDeci = False
@@ -78,9 +77,14 @@ isDeci = False
 def add_to_exp(val):
     global current, expression, isDeci
 
+    if current == "Error":
+        current = ""
+        update_label()
+
     if val not in special_symbols:
         if (val in right_symbols.values() or val in top_symbols):
-            if current[-1] == ".":
+            
+            if current and current[-1] == ".":
                 current += "0"
             append_operator(val)
 
@@ -148,17 +152,25 @@ def calculate():
         global expression, current
         expression += current
         update_e_label()
+        if not expression:
+            print("[Expression = Null] :: No Value Detected.")
+            return
         current = str(eval(expression))
         expression = ""
         update_label()
     except Exception as e:
+        current = "Error"
+        update_label()
+        print("Expression Error..")
         print("Exception found: " , e)
         return
 
 def clear():
-    global expression, current
+    global expression, current, isDeci
     if current:
         current = current[:-1]
+        if '.' not in current:
+            isDeci = False  
         update_label()
     else:
         print("[Value = Null] :: Nothing to clear.")
@@ -166,7 +178,7 @@ def clear():
 
 
 def all_clear():
-    global expression, current
+    global expression, current, isDeci
     expression = ""
     current = ""
     isDeci = False
